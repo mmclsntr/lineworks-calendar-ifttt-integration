@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block main %}
+<body>
+    <h3 class="ui center aligned header">Setting</h3>
+    <div class="ui left aligned container">
+        <p>
+            User ID: {{ user_id }}
+        </p>
+        <form class="ui form" action="/settings/submit" method="POST">
+            <div class="field">
+                <label>IFTTT Integration Key</label>
+                <input type="password" name="integration_key" placeholder="Event ID">
+            </div>
+            <div class="field">
+                <label>IFTTT Event ID</label>
+                <input type="text" name="event_id" placeholder="Event ID">
+            </div>
+            <div class="field">
+                <label>Description</label>
+                <input type="text" name="description" placeholder="Description">
+            </div>
+            <input type="hidden" name="user_id" value="{{ user_id}}" >
+            <button class="ui button" type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+{% endblock %}

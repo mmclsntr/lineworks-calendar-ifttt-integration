@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block main %}
+<body>
+    <h3 class="ui center aligned header">Login</h3>
+    <div class="ui left aligned container">
+        <a href="{{ auth_url }}"><button class="ui center aligned button active">Login</button></a>
+        <p>
+            Redirect URL : {{ redirect_url }}
+        </p>
+    </div>
+</body>
+{% endblock %}

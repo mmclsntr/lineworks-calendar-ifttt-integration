@@ -1,0 +1,109 @@
+service: lw-calendar-ifttt
+frameworkVersion: "^3"
+
+params:
+  default:
+    prefix: ${param:author}-${param:appname}-${self:service}
+
+custom:
+  pythonRequirements:
+    dockerImage: public.ecr.aws/sam/build-python3.9:latest-arm64
+    dockerizePip: true
+    useStaticCache: false
+    useDownloadCache: false
+
+package:
+  patterns:
+    - '!node_modules/**'
+    - '!venv/**'
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: ap-northeast-1
+  stage: dev
+  memorySize: 256
+  stackName: ${param:prefix}
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AmazonSSMFullAccess'
+    - 'arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess'
+    - 'arn:aws:iam::aws:policy/AWSLambdaExecute'
+  environment:
+    Prefix: ${param:prefix}
+    Author: ${param:author}
+    Dep: ${param:dep}
+    Stage: ${sls:stage}
+    AppName: ${param:appname}
+    LOG_LEVEL: INFO
+    DOMAIN_ID: ${param:domain_id}
+    TABLE_LW_CLIENT_CRED: ${param:prefix}-lw-client-cred
+    TABLE_LW_TOKEN: ${param:prefix}-lw-token
+    TABLE_SETTIG: ${param:prefix}-setting
+  architecture: arm64
+
+functions:
+  settings:
+    name: ${param:prefix}-settings
+    handler: handler_setting.lambda_handler
+    timeout: 30
+    layers:
+      - arn:aws:lambda:${aws:region}:017000801446:layer:AWSLambdaPowertoolsPython:33
+    events:
+      - httpApi: '*'
+
+  action:
+    name: ${param:prefix}-action
+    handler: handler_action.lambda_handler
+    timeout: 300
+    layers:
+      - arn:aws:lambda:${aws:region}:017000801446:layer:AWSLambdaPowertoolsPython:33
+    events:
+      - schedule: cron(*/5 * * * ? *)
+
+
+resources:
+  Resources:
+    LWClientCredTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${param:prefix}-lw-client-cred
+        AttributeDefinitions:
+          - AttributeName: domain_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: domain_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    LWToeknTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${param:prefix}-lw-token
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    SettingTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${param:prefix}-setting
+        AttributeDefinitions:
+          - AttributeName: calendar_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: calendar_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+plugins:
+  - serverless-python-requirements
